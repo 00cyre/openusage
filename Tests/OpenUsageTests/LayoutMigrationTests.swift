@@ -22,6 +22,18 @@ final class LayoutMigrationTests: XCTestCase {
         XCTAssertEqual(app.hidden(secondClaude), [], "a provider's later accounts start with every metric shown")
     }
 
+    func testZeroSevenMenuBarPinsBecomePriorityPins() throws {
+        let app = try MigrationApp(defaults: zeroSevenDefaults())
+        XCTAssertEqual(app.pinned(app.add(.claude)), ["weekly"])
+        XCTAssertEqual(app.pinned(app.add(.codex)), ["session", "weekly"])
+        XCTAssertEqual(app.pinned(app.add(.cursor)), ["today", "yesterday"])
+        XCTAssertEqual(app.pinned(app.add(.ollama)), [], "0.7.x had Ollama off")
+        XCTAssertEqual(app.pinned(app.add(.claude)), [], "a provider's later accounts start with no pins")
+
+        app.relaunch()
+        XCTAssertEqual(app.layout.state.priorityPinIDs.count, 5, "pins survive a relaunch")
+    }
+
     func testZeroSevenHidingSpeaksOnlyForMetricsItHad() throws {
         let app = try MigrationApp(defaults: zeroSevenDefaults())
         XCTAssertEqual(app.hidden(app.add(.grok)), [], "0.7.x showed only Grok metrics that are gone, so no account starts empty")
@@ -176,6 +188,10 @@ private final class MigrationApp {
 
     func hidden(_ account: Account) -> [String] {
         layout.registry.descriptors(for: account.cardID).filter { !layout.isMetricShown($0.id) }.map(\.key).sorted()
+    }
+
+    func pinned(_ account: Account) -> [String] {
+        layout.registry.descriptors(for: account.cardID).filter { layout.state.priorityPinIDs.contains($0.id) }.map(\.key).sorted()
     }
 
     func order(_ account: Account) -> [String] {

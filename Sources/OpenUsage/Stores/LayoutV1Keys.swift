@@ -39,6 +39,8 @@ struct CarriedLayout {
     var metricOrder: [String]?
     /// Where the account goes among the others, or nil when 0.7.x saved no place for its provider.
     var providerIndex: Int?
+    /// The metrics 0.7.x pinned to the menu bar, which become Priority pins.
+    var pinned: [String] = []
 }
 
 extension LayoutV1Keys {
@@ -75,7 +77,8 @@ extension LayoutV1Keys {
             metricOrder: metricOrderByProvider?[account].map { ids in
                 Self.keys(of: account, in: ids).compactMap { key in metrics.first { $0.key == key }?.id }
             },
-            providerIndex: providerIndex(of: provider.kind, among: others.map(\.kind))
+            providerIndex: providerIndex(of: provider.kind, among: others.map(\.kind)),
+            pinned: metrics.filter { starred.contains($0.key) }.map(\.id)
         )
     }
 
